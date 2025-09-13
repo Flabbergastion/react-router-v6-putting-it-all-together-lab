@@ -1,42 +1,52 @@
-import { useState } from "react"
-import { v4 as uuidv4 } from 'uuid'
+import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from 'uuid';
+import { useNavigate, useParams } from "react-router-dom";
 
 function MovieForm() {
-  const [title, setTitle] = useState("")
-  const [time, setTime] = useState("")
-  const [genres, setGenres] = useState("")
+  const [title, setTitle] = useState("");
+  const [time, setTime] = useState("");
+  const [genres, setGenres] = useState("");
+  const [director, setDirector] = useState(null);
+  const { directorId } = useParams();
+  const navigate = useNavigate();
 
-  // Replace me
-  const director = null
-  
-  if (!director) { return <h2>Director not found.</h2>}
+  useEffect(() => {
+    fetch(`http://localhost:4000/directors/${directorId}`)
+      .then(r => {
+        if (!r.ok) throw new Error("Director not found");
+        return r.json();
+      })
+      .then(setDirector)
+      .catch(() => setDirector(null));
+  }, [directorId]);
+
+  if (!director) { return <h2>Director not found.</h2>; }
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     const newMovie = {
       id: uuidv4(),
       title,
       time: parseInt(time),
       genres: genres.split(",").map((genre) => genre.trim()),
-    }
-    fetch(`http://localhost:4000/directors/${id}`, {
+    };
+    fetch(`http://localhost:4000/directors/${directorId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({movies: [...director.movies, newMovie]})
+      body: JSON.stringify({ movies: [...director.movies, newMovie] })
     })
-    .then(r => {
-      if (!r.ok) { throw new Error("failed to add movie") }
-      return r.json()
-    })
-    .then(data => {
-      console.log(data)
-      // handle context/state changes
-      // navigate to newly created movie page
-    })
-    .catch(console.log)
-  }
+      .then(r => {
+        if (!r.ok) { throw new Error("failed to add movie") }
+        return r.json();
+      })
+      .then(data => {
+        // After successful creation, navigate to the new movie's detail page
+        navigate(`/directors/${directorId}/movies/${newMovie.id}`);
+      })
+      .catch(console.log);
+  };
 
   return (
     <div>
